@@ -162,30 +162,15 @@ def api_whitelist():
         }), 400
 
     set_ip_cooldown(client_ip)
-    uids_data = load_uids()
 
-    # 5. Local duplicate check
-    if raw_uid in uids_data:
-        existing = uids_data[raw_uid]
-        return jsonify({
-            "success": False,
-            "message": "This UID is already actively whitelisted.",
-            "data": {
-                "uid": raw_uid,
-                "added_time": existing.get("added_time"),
-                "expiry_time": existing.get("expiry_time"),
-                "status": "Active"
-            }
-        }), 409
-
-    # 6. Verify API Key is configured in environment
+    # 5. Verify API Key is configured in environment
     if not config.API_KEY:
         return jsonify({
             "success": False,
             "message": "Gateway API Key is not configured in server environment."
         }), 500
 
-    # 7. Call external API
+    # 6. Call external API (Live server check)
     headers = {
         'X-API-KEY': config.API_KEY,
         'Content-Type': 'application/json',
@@ -222,6 +207,7 @@ def api_whitelist():
             expiry_time = expiry_dt.strftime('%Y-%m-%d %H:%M:%S')
 
             # Save in local database
+            uids_data = load_uids()
             uids_data[raw_uid] = {
                 "uid": raw_uid,
                 "added_time": added_time,
@@ -269,10 +255,72 @@ def api_status(uid):
             "message": "UID must be numeric."
         }), 400
 
+    # 1. LIVE API QUERY FIRST (Real-time check)
+    headers = {
+        'X-API-KEY': config.API_KEY,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
+    }
+
+    if config.API_KEY:
+        try:
+            r = requests.get(
+                f"{config.API_URL}?action=info&account_id={clean_uid}",
+                headers=headers,
+                timeout=8
+            )
+            res_json = r.json() if r.status_code in (200, 400, 403, 404) else None
+
+            # If API explicitly says Account ID not found -> Purge from local database if present
+            if res_json and "not found" in str(res_json.get("message", "")).lower():
+                uids_data = load_uids()
+                if clean_uid in uids_data:
+                    del uids_data[clean_uid]
+                    save_uids(uids_data)
+                return jsonify({
+                    "success": False,
+                    "message": "No active whitelist found for this UID. It may have been removed or expired."
+                }), 404
+
+            # If API says success: True
+            if res_json and res_json.get("success") and "data" in res_json:
+                api_data = res_json["data"]
+                expiry_str = api_data.get("expiry_date")
+                added_str = api_data.get("added_on", "N/A")
+
+                # Compute remaining seconds from expiry_date if available
+                remaining_seconds = 86400
+                now = datetime.datetime.now()
+                if expiry_str:
+                    try:
+                        expiry_dt = datetime.datetime.strptime(expiry_str, "%Y-%m-%d %H:%M:%S")
+                        remaining_seconds = max(0, int((expiry_dt - now).total_seconds()))
+                    except Exception:
+                        pass
+
+                hours = remaining_seconds // 3600
+                minutes = (remaining_seconds % 3600) // 60
+                seconds = remaining_seconds % 60
+
+                return jsonify({
+                    "success": True,
+                    "data": {
+                        "uid": clean_uid,
+                        "status": "Active",
+                        "added_time": added_str,
+                        "expiry_time": expiry_str or "24 Hours from activation",
+                        "remaining_seconds": remaining_seconds,
+                        "remaining_formatted": f"{hours}h {minutes}m {seconds}s",
+                        "progress_percent": max(0, min(100, int((remaining_seconds / 86400) * 100)))
+                    }
+                }), 200
+
+        except Exception as e:
+            print(f"Live API status query error: {e}")
+
+    # 2. Fallback to local database if remote gateway is unreachable
     uids_data = load_uids()
     now = datetime.datetime.now()
 
-    # 1. Check local registry
     if clean_uid in uids_data:
         info = uids_data[clean_uid]
         expiry_str = info.get("expiry_time")
@@ -298,37 +346,6 @@ def api_status(uid):
                     "progress_percent": max(0, min(100, int((remaining_seconds / 86400) * 100)))
                 }
             })
-
-    # 2. Check remote API if not in local and API_KEY is set
-    if config.API_KEY:
-        headers = {
-            'X-API-KEY': config.API_KEY,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
-        }
-        try:
-            r = requests.get(
-                f"{config.API_URL}?action=info&account_id={clean_uid}",
-                headers=headers,
-                timeout=8
-            )
-            if r.status_code == 200:
-                res_json = r.json()
-                if res_json.get("success") and "data" in res_json:
-                    api_data = res_json["data"]
-                    return jsonify({
-                        "success": True,
-                        "data": {
-                            "uid": clean_uid,
-                            "status": "Active",
-                            "added_time": api_data.get("added_on", "N/A"),
-                            "expiry_time": api_data.get("expiry_date", "N/A"),
-                            "remaining_seconds": 86400,
-                            "remaining_formatted": "Active on Server",
-                            "progress_percent": 100
-                        }
-                    })
-        except Exception as e:
-            print(f"Info API query error: {e}")
 
     return jsonify({
         "success": False,
