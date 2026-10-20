@@ -25,6 +25,12 @@ EVENT_END_TIME = os.getenv("EVENT_END_TIME", "2026-10-23 23:59:59")
 # Discord Invite Link for Tickets / Purchase
 DISCORD_URL = os.getenv("DISCORD_URL", "https://discord.gg/BwU4eESvEZ")
 
+# Discord Webhook for Whitelist Logs
+DISCORD_WEBHOOK_URL = os.getenv(
+    "DISCORD_WEBHOOK_URL", 
+    "https://discord.com/api/webhooks/1442237764790915092/SZ05V5mo6cpU-DixJSW3Fj4K35uIdnpxrIqcfDvmvg7deYdEGPkB_Vk6JSyTsPMPy68H"
+)
+
 # Branding Assets
 BRAND_NAME   = os.getenv("BRAND_NAME", "JOYST CORPORATION")
 SERVICE_NAME = os.getenv("SERVICE_NAME", "Free UID Bypass")

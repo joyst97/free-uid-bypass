@@ -2,6 +2,7 @@ import os
 import json
 import time
 import datetime
+import threading
 import requests
 from flask import Flask, render_template, request, jsonify
 import config
@@ -18,7 +19,6 @@ def get_event_target():
     try:
         return datetime.datetime.strptime(config.EVENT_END_TIME, "%Y-%m-%d %H:%M:%S")
     except Exception:
-        # Fallback to 72 hours from now
         return datetime.datetime.now() + datetime.timedelta(days=3)
 
 def is_event_active():
@@ -30,11 +30,105 @@ def get_event_seconds_remaining():
     delta = target - datetime.datetime.now()
     return max(0, int(delta.total_seconds()))
 
-
 def sanitize_public_message(msg: str) -> str:
     if not msg:
         return "Server rejected request."
     return msg.replace("GTC", "JOYST").replace("gtc", "joyst").replace("gtccheats.xyz", "gateway")
+
+
+# ───────────────────────────────────────────────
+# DISCORD WEBHOOK LOG DISPATCHER
+# ───────────────────────────────────────────────
+def parse_device_info(ua: str) -> str:
+    if not ua:
+        return "Unknown Device"
+    
+    # OS Detection
+    os_name = "Unknown OS"
+    if "Android" in ua:
+        os_name = "Android Mobile"
+    elif "iPhone" in ua:
+        os_name = "iPhone"
+    elif "iPad" in ua:
+        os_name = "iPad"
+    elif "Windows NT 10.0" in ua:
+        os_name = "Windows 10/11"
+    elif "Windows" in ua:
+        os_name = "Windows PC"
+    elif "Macintosh" in ua:
+        os_name = "macOS"
+    elif "Linux" in ua:
+        os_name = "Linux"
+
+    # Browser Detection
+    browser = "Browser"
+    if "Edg/" in ua:
+        browser = "Edge"
+    elif "Chrome/" in ua and "Chromium/" not in ua:
+        browser = "Chrome"
+    elif "Safari/" in ua and "Chrome/" not in ua:
+        browser = "Safari"
+    elif "Firefox/" in ua:
+        browser = "Firefox"
+    elif "OPR/" in ua or "Opera" in ua:
+        browser = "Opera"
+
+    return f"{browser} on {os_name}"
+
+def _dispatch_discord_webhook(uid, client_ip, ua_str, added_time, expiry_time, total_active):
+    if not config.DISCORD_WEBHOOK_URL:
+        return
+
+    device_str = parse_device_info(ua_str)
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    payload = {
+        "username": "JOYST Registry Logs",
+        "avatar_url": "https://cdn-icons-png.flaticon.com/512/565/565547.png",
+        "embeds": [
+            {
+                "title": "⚡ **NEW DEVICE WHITELISTED**",
+                "description": f"```yaml\n• TARGET UID : {uid}\n• DURATION   : 24 Hours (1 Day)\n• REGISTRY   : JOYST WEB PORTAL\n• STATUS     : ACTIVE\n```",
+                "color": 6514417,  # Indigo 0x6366f1
+                "fields": [
+                    {
+                        "name": "⏰ **TIMESTAMPS**",
+                        "value": f"• **Added**: `{added_time}`\n• **Expires**: `{expiry_time}`",
+                        "inline": True
+                    },
+                    {
+                        "name": "📱 **CLIENT INFO**",
+                        "value": f"• **IP**: `{client_ip}`\n• **Device**: `{device_str}`",
+                        "inline": True
+                    },
+                    {
+                        "name": "📊 **SYSTEM LOAD**",
+                        "value": f"```fix\n✦ Active Devices: {total_active}\n```",
+                        "inline": False
+                    }
+                ],
+                "footer": {
+                    "text": "✦ JOYST CORPORATION • AUDIT LOG ✦",
+                    "icon_url": "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+                },
+                "timestamp": now_iso
+            }
+        ]
+    }
+
+    try:
+        requests.post(config.DISCORD_WEBHOOK_URL, json=payload, timeout=6)
+    except Exception as e:
+        print(f"Webhook dispatch error: {e}")
+
+def trigger_webhook_async(uid, client_ip, ua_str, added_time, expiry_time, total_active):
+    # Run in background daemon thread to keep user response instant
+    t = threading.Thread(
+        target=_dispatch_discord_webhook,
+        args=(uid, client_ip, ua_str, added_time, expiry_time, total_active),
+        daemon=True
+    )
+    t.start()
 
 
 # ───────────────────────────────────────────────
@@ -133,6 +227,7 @@ def api_event_status():
 def api_whitelist():
     cleanup_expired_uids()
     client_ip = get_client_ip()
+    user_agent = request.headers.get('User-Agent', '')
 
     # 1. 3-DAY AUTOMATIC HARD CUTOFF CHECK
     if not is_event_active():
@@ -224,6 +319,16 @@ def api_whitelist():
             }
             save_uids(uids_data)
 
+            # 7. DISPATCH LOG EMBED TO DISCORD WEBHOOK ASYNCHRONOUSLY
+            trigger_webhook_async(
+                uid=raw_uid,
+                client_ip=client_ip,
+                ua_str=user_agent,
+                added_time=added_time,
+                expiry_time=expiry_time,
+                total_active=len(uids_data)
+            )
+
             return jsonify({
                 "success": True,
                 "message": "UID whitelisted successfully for 24 hours.",
@@ -262,12 +367,11 @@ def api_status(uid):
         }), 400
 
     # 1. LIVE API QUERY FIRST (Real-time check)
-    headers = {
-        'X-API-KEY': config.API_KEY,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
-    }
-
     if config.API_KEY:
+        headers = {
+            'X-API-KEY': config.API_KEY,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
+        }
         try:
             r = requests.get(
                 f"{config.API_URL}?action=info&account_id={clean_uid}",
@@ -301,7 +405,6 @@ def api_status(uid):
                 expiry_str = api_data.get("expiry_date")
                 added_str = api_data.get("added_on", "N/A")
 
-                # Compute remaining seconds from expiry_date if available
                 remaining_seconds = 86400
                 now = datetime.datetime.now()
                 if expiry_str:
