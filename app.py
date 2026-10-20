@@ -12,6 +12,26 @@ app = Flask(__name__)
 ip_cooldowns = {}
 
 # ───────────────────────────────────────────────
+# EVENT TIME HELPERS
+# ───────────────────────────────────────────────
+def get_event_target():
+    try:
+        return datetime.datetime.strptime(config.EVENT_END_TIME, "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        # Fallback to 72 hours from now
+        return datetime.datetime.now() + datetime.timedelta(days=3)
+
+def is_event_active():
+    target = get_event_target()
+    return datetime.datetime.now() < target
+
+def get_event_seconds_remaining():
+    target = get_event_target()
+    delta = target - datetime.datetime.now()
+    return max(0, int(delta.total_seconds()))
+
+
+# ───────────────────────────────────────────────
 # DATABASE HELPERS
 # ───────────────────────────────────────────────
 def load_uids():
@@ -75,12 +95,32 @@ def get_client_ip():
 @app.route('/')
 def index():
     cleanup_expired_uids()
+    event_active = is_event_active()
+    rem_seconds = get_event_seconds_remaining()
+    
     return render_template(
         'index.html',
         brand_name=config.BRAND_NAME,
         service_name=config.SERVICE_NAME,
-        logo_url=config.LOGO_URL
+        logo_url=config.LOGO_URL,
+        event_active=event_active,
+        event_end_time=config.EVENT_END_TIME,
+        event_rem_seconds=rem_seconds,
+        discord_url=config.DISCORD_URL
     )
+
+
+@app.route('/api/event-status', methods=['GET'])
+def api_event_status():
+    active = is_event_active()
+    rem = get_event_seconds_remaining()
+    return jsonify({
+        "active": active,
+        "ended": not active,
+        "remaining_seconds": rem,
+        "end_time": config.EVENT_END_TIME,
+        "discord_url": config.DISCORD_URL
+    })
 
 
 @app.route('/api/whitelist', methods=['POST'])
@@ -88,7 +128,15 @@ def api_whitelist():
     cleanup_expired_uids()
     client_ip = get_client_ip()
 
-    # Cooldown check
+    # 1. 3-DAY AUTOMATIC HARD CUTOFF CHECK
+    if not is_event_active():
+        return jsonify({
+            "success": False,
+            "event_ended": True,
+            "message": "Free UID bypass trial has ended. To purchase access, please create a ticket in our Discord server."
+        }), 403
+
+    # 2. Cooldown check
     cooldown = check_ip_cooldown(client_ip)
     if cooldown > 0:
         return jsonify({
@@ -99,14 +147,14 @@ def api_whitelist():
     data = request.get_json(silent=True) or {}
     raw_uid = str(data.get("uid", "")).strip().replace('"', '').replace("'", "")
 
-    # Validation: Numbers only
+    # 3. Validation: Numbers only
     if not raw_uid.isdigit():
         return jsonify({
             "success": False,
             "message": "UID must contain numbers only."
         }), 400
 
-    # Validation: Length > 6
+    # 4. Validation: Length > 6
     if len(raw_uid) <= 6:
         return jsonify({
             "success": False,
@@ -116,7 +164,7 @@ def api_whitelist():
     set_ip_cooldown(client_ip)
     uids_data = load_uids()
 
-    # Local duplicate check
+    # 5. Local duplicate check
     if raw_uid in uids_data:
         existing = uids_data[raw_uid]
         return jsonify({
@@ -130,14 +178,14 @@ def api_whitelist():
             }
         }), 409
 
-    # Verify API Key is configured in environment
+    # 6. Verify API Key is configured in environment
     if not config.API_KEY:
         return jsonify({
             "success": False,
             "message": "Gateway API Key is not configured in server environment."
         }), 500
 
-    # Call external API
+    # 7. Call external API
     headers = {
         'X-API-KEY': config.API_KEY,
         'Content-Type': 'application/json',
@@ -286,16 +334,6 @@ def api_status(uid):
         "success": False,
         "message": "No active whitelist found for this UID."
     }), 404
-
-
-@app.route('/api/stats', methods=['GET'])
-def api_stats():
-    cleanup_expired_uids()
-    uids_data = load_uids()
-    return jsonify({
-        "success": True,
-        "active_devices": len(uids_data)
-    })
 
 
 if __name__ == '__main__':

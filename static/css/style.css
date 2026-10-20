@@ -17,6 +17,10 @@
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
     --primary-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
     
+    --discord-blurple: #5865f2;
+    --discord-hover: #4752c4;
+    --discord-glow: rgba(88, 101, 242, 0.35);
+    
     --emerald: #10b981;
     --emerald-bg: rgba(16, 185, 129, 0.12);
     --danger: #ef4444;
@@ -108,18 +112,18 @@ body {
 /* Brand Section */
 .brand-section {
     text-align: center;
-    margin-bottom: 26px;
+    margin-bottom: 22px;
 }
 
 .brand-crest {
     display: inline-flex;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     position: relative;
 }
 
 .crest-svg {
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
     filter: drop-shadow(0 6px 20px rgba(99, 102, 241, 0.35));
     transition: transform 0.25s ease;
 }
@@ -169,6 +173,46 @@ body {
     border-radius: 12px;
     font-size: 0.66rem;
     font-weight: 800;
+}
+
+/* Event Countdown Live Banner */
+.event-banner {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
+}
+
+.event-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #c7d2fe;
+    letter-spacing: 0.4px;
+}
+
+.event-badge i {
+    color: var(--amber);
+}
+
+.event-timer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+}
+
+.event-timer strong {
+    font-size: 0.82rem;
+    color: #ffffff;
 }
 
 /* Panel Card */
@@ -442,10 +486,6 @@ body {
     animation: panelFade 0.25s ease-out;
 }
 
-.result-card.hidden {
-    display: none;
-}
-
 .res-header {
     display: flex;
     justify-content: space-between;
@@ -528,6 +568,100 @@ body {
 .copy-button:hover {
     color: var(--text-white);
     background: rgba(255, 255, 255, 0.08);
+}
+
+/* ───────────────────────────────────────────
+   EVENT ENDED / PURCHASE CARD
+   ─────────────────────────────────────────── */
+.ended-card {
+    text-align: center;
+    padding: 20px 8px 10px;
+    animation: panelFade 0.3s ease-out;
+}
+
+.ended-icon-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+.ended-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1.5px solid rgba(245, 158, 11, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--amber);
+    font-size: 1.5rem;
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+
+.ended-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.ended-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 18px;
+}
+
+.ended-instruction {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.ended-instruction i {
+    color: #818cf8;
+}
+
+.btn-discord-ticket {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--discord-blurple);
+    color: #ffffff;
+    text-decoration: none;
+    padding: 16px 24px;
+    border-radius: var(--radius-md);
+    font-size: 0.98rem;
+    font-weight: 700;
+    box-shadow: 0 6px 20px var(--discord-glow);
+    transition: all 0.22s ease;
+}
+
+.btn-discord-ticket:hover {
+    background: var(--discord-hover);
+    box-shadow: 0 8px 25px rgba(88, 101, 242, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-discord-ticket:active {
+    transform: translateY(0);
+}
+
+.icon-ext {
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
 
 /* Countdown Card */
@@ -625,6 +759,11 @@ body {
 
 .toast.error {
     border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Utility Hidden */
+.hidden {
+    display: none !important;
 }
 
 /* Shake Animation */

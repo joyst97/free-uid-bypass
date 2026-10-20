@@ -25,7 +25,6 @@
         <!-- PROMINENT BRAND HEADER -->
         <header class="brand-section">
             <div class="brand-crest">
-                <!-- Custom High-End Vector Emblem -->
                 <svg class="crest-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="48" height="48" rx="14" fill="url(#crest-bg)" />
                     <rect x="1" y="1" width="46" height="46" rx="13" stroke="url(#crest-border)" stroke-width="1.5" />
@@ -59,6 +58,18 @@
             </div>
         </header>
 
+        <!-- 3-DAY EVENT LIVE COUNTDOWN BANNER -->
+        <div class="event-banner {% if not event_active %}hidden{% endif %}" id="event-live-banner">
+            <div class="event-badge">
+                <i class="fa-solid fa-bolt-lightning"></i>
+                <span>LIMITED 3-DAY FREE EVENT</span>
+            </div>
+            <div class="event-timer">
+                <span>Ends in:</span>
+                <strong class="font-mono text-glow" id="event-timer-digits">--d --h --m --s</strong>
+            </div>
+        </div>
+
         <!-- MAIN PANEL CARD -->
         <main class="panel-card">
             
@@ -76,67 +87,98 @@
 
             <!-- PANEL 1: WHITELIST -->
             <div class="tab-panel active" id="panel-whitelist">
-                <div class="panel-intro">
-                    <h2>Activate Free Bypass</h2>
-                    <p>Enter your player UID to instantly register your 24-hour bypass slot.</p>
+
+                <!-- STATE A: EVENT ACTIVE (FORM) -->
+                <div id="whitelist-active-view" class="{% if not event_active %}hidden{% endif %}">
+                    <div class="panel-intro">
+                        <h2>Activate Free Bypass</h2>
+                        <p>Enter your player UID to instantly register your 24-hour bypass slot.</p>
+                    </div>
+
+                    <form id="form-whitelist" autocomplete="off" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="input-uid">PLAYER UID</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-gamepad icon-field"></i>
+                                <input 
+                                    type="text" 
+                                    id="input-uid" 
+                                    placeholder="Enter Free Fire UID (e.g. 192837465)" 
+                                    maxlength="22"
+                                    required
+                                >
+                                <button type="button" class="paste-trigger" id="btn-paste" title="Paste from clipboard">
+                                    <i class="fa-regular fa-clipboard"></i>
+                                    <span>Paste</span>
+                                </button>
+                            </div>
+                            <div class="form-feedback">
+                                <span id="field-feedback">Numbers only • Minimum 7 digits</span>
+                                <span class="count-pill" id="digit-count">0 digits</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-submit" class="cta-button">
+                            <span class="cta-text">
+                                <i class="fa-solid fa-shield-check"></i>
+                                <span>Whitelist Now</span>
+                            </span>
+                            <div class="cta-spinner" id="spinner"></div>
+                        </button>
+                    </form>
+
+                    <!-- SUCCESS RESULT -->
+                    <div id="card-result" class="result-card hidden">
+                        <div class="res-header">
+                            <div class="res-status">
+                                <span class="dot-green"></span>
+                                <span>Whitelisted & Active</span>
+                            </div>
+                            <span class="res-target-uid" id="res-uid">--</span>
+                        </div>
+                        <div class="res-rows">
+                            <div class="res-row">
+                                <span>Access Duration</span>
+                                <strong>24 Hours (1 Day)</strong>
+                            </div>
+                            <div class="res-row">
+                                <span>Expires At</span>
+                                <strong class="text-glow" id="res-expiry">--</strong>
+                            </div>
+                        </div>
+                        <button type="button" class="copy-button" id="btn-copy">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copy UID</span>
+                        </button>
+                    </div>
                 </div>
 
-                <form id="form-whitelist" autocomplete="off" onsubmit="return false;">
-                    <div class="form-group">
-                        <label for="input-uid">PLAYER UID</label>
-                        <div class="input-wrap">
-                            <i class="fa-solid fa-gamepad icon-field"></i>
-                            <input 
-                                type="text" 
-                                id="input-uid" 
-                                placeholder="Enter Free Fire UID (e.g. 192837465)" 
-                                maxlength="22"
-                                required
-                            >
-                            <button type="button" class="paste-trigger" id="btn-paste" title="Paste from clipboard">
-                                <i class="fa-regular fa-clipboard"></i>
-                                <span>Paste</span>
-                            </button>
-                        </div>
-                        <div class="form-feedback">
-                            <span id="field-feedback">Numbers only • Minimum 7 digits</span>
-                            <span class="count-pill" id="digit-count">0 digits</span>
+                <!-- STATE B: EVENT ENDED (PURCHASE CARD) -->
+                <div id="whitelist-ended-view" class="ended-card {% if event_active %}hidden{% endif %}">
+                    <div class="ended-icon-wrapper">
+                        <div class="ended-icon">
+                            <i class="fa-solid fa-lock"></i>
                         </div>
                     </div>
 
-                    <button type="submit" id="btn-submit" class="cta-button">
-                        <span class="cta-text">
-                            <i class="fa-solid fa-shield-check"></i>
-                            <span>Whitelist Now</span>
-                        </span>
-                        <div class="cta-spinner" id="spinner"></div>
-                    </button>
-                </form>
+                    <h2 class="ended-title">Free UID Bypass Trial Is Ended</h2>
+                    
+                    <p class="ended-desc">
+                        The 3-day free trial period has concluded. To continue using the bypass, you now have to purchase a license.
+                    </p>
 
-                <!-- SUCCESS RESULT -->
-                <div id="card-result" class="result-card hidden">
-                    <div class="res-header">
-                        <div class="res-status">
-                            <span class="dot-green"></span>
-                            <span>Whitelisted & Active</span>
-                        </div>
-                        <span class="res-target-uid" id="res-uid">--</span>
+                    <div class="ended-instruction">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Create a ticket in our Discord server to purchase</span>
                     </div>
-                    <div class="res-rows">
-                        <div class="res-row">
-                            <span>Access Duration</span>
-                            <strong>24 Hours (1 Day)</strong>
-                        </div>
-                        <div class="res-row">
-                            <span>Expires At</span>
-                            <strong class="text-glow" id="res-expiry">--</strong>
-                        </div>
-                    </div>
-                    <button type="button" class="copy-button" id="btn-copy">
-                        <i class="fa-regular fa-copy"></i>
-                        <span>Copy UID</span>
-                    </button>
+
+                    <a href="{{ discord_url }}" target="_blank" class="btn-discord-ticket">
+                        <i class="fa-brands fa-discord"></i>
+                        <span>Create Ticket on Discord</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square icon-ext"></i>
+                    </a>
                 </div>
+
             </div>
 
             <!-- PANEL 2: CHECK STATUS -->
@@ -204,6 +246,16 @@
         </footer>
 
     </div>
+
+    <!-- Pass Event Data to JS safely -->
+    <script>
+        window.EVENT_CONFIG = {
+            active: {{ 'true' if event_active else 'false' }},
+            remSeconds: {{ event_rem_seconds }},
+            endTime: "{{ event_end_time }}",
+            discordUrl: "{{ discord_url }}"
+        };
+    </script>
 
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast"></div>
