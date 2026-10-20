@@ -31,6 +31,12 @@ def get_event_seconds_remaining():
     return max(0, int(delta.total_seconds()))
 
 
+def sanitize_public_message(msg: str) -> str:
+    if not msg:
+        return "Server rejected request."
+    return msg.replace("GTC", "JOYST").replace("gtc", "joyst").replace("gtccheats.xyz", "gateway")
+
+
 # ───────────────────────────────────────────────
 # DATABASE HELPERS
 # ───────────────────────────────────────────────
@@ -230,10 +236,10 @@ def api_whitelist():
                 }
             }), 200
         else:
-            msg = res_json.get('message', 'Server rejected request.') if res_json else f"Server error ({response.status_code})"
+            raw_err = res_json.get('message', 'Server rejected request.') if res_json else f"Server error ({response.status_code})"
             return jsonify({
                 "success": False,
-                "message": msg
+                "message": sanitize_public_message(raw_err)
             }), 400
 
     except requests.RequestException as e:
@@ -270,15 +276,23 @@ def api_status(uid):
             )
             res_json = r.json() if r.status_code in (200, 400, 403, 404) else None
 
-            # If API explicitly says Account ID not found -> Purge from local database if present
-            if res_json and "not found" in str(res_json.get("message", "")).lower():
+            # If API explicitly says not success
+            if res_json and not res_json.get("success"):
+                err_msg = str(res_json.get("message", ""))
+                if "not found" in err_msg.lower():
+                    clean_msg = "No active whitelist found for this UID. It may have been removed or expired."
+                elif "another admin" in err_msg.lower():
+                    clean_msg = "This UID is registered under another license."
+                else:
+                    clean_msg = sanitize_public_message(err_msg)
+                
                 uids_data = load_uids()
                 if clean_uid in uids_data:
                     del uids_data[clean_uid]
                     save_uids(uids_data)
                 return jsonify({
                     "success": False,
-                    "message": "No active whitelist found for this UID. It may have been removed or expired."
+                    "message": clean_msg
                 }), 404
 
             # If API says success: True
