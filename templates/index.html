@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOYST CORPORATION • Free UID Bypass</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Premium Dark Background with Subtle Cyber Grid & Ambient Lighting -->
+    <div class="bg-wrapper">
+        <div class="bg-gradient-top"></div>
+        <div class="bg-gradient-bottom"></div>
+        <div class="bg-grid-overlay"></div>
+    </div>
+
+    <div class="page-container">
+        
+        <!-- PROMINENT BRAND HEADER -->
+        <header class="brand-section">
+            <div class="brand-crest">
+                <!-- Custom High-End Vector Emblem -->
+                <svg class="crest-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="48" height="48" rx="14" fill="url(#crest-bg)" />
+                    <rect x="1" y="1" width="46" height="46" rx="13" stroke="url(#crest-border)" stroke-width="1.5" />
+                    <!-- Stylized J Emblem -->
+                    <path d="M26 14V27C26 29.7614 23.7614 32 21 32C18.2386 32 16 29.7614 16 27V26" stroke="url(#crest-glow)" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M22 14H30" stroke="url(#crest-glow)" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="31" cy="19" r="2.5" fill="#6366f1"/>
+                    <defs>
+                        <linearGradient id="crest-bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#181824"/>
+                            <stop offset="1" stop-color="#0d0e15"/>
+                        </linearGradient>
+                        <linearGradient id="crest-border" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366f1" stop-opacity="0.8"/>
+                            <stop offset="1" stop-color="#a855f7" stop-opacity="0.2"/>
+                        </linearGradient>
+                        <linearGradient id="crest-glow" x1="16" y1="14" x2="30" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#818cf8"/>
+                            <stop offset="1" stop-color="#c084fc"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <h1 class="brand-title">JOYST CORPORATION</h1>
+            
+            <div class="brand-badge-pill">
+                <span class="pulse-indicator"></span>
+                <span>FREE FIRE BYPASS GATEWAY</span>
+                <span class="badge-accent">24H TRIAL</span>
+            </div>
+        </header>
+
+        <!-- MAIN PANEL CARD -->
+        <main class="panel-card">
+            
+            <!-- TABS -->
+            <div class="tab-nav">
+                <button class="nav-tab-btn active" id="tab-whitelist">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span>Whitelist Device</span>
+                </button>
+                <button class="nav-tab-btn" id="tab-status">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Check Expiry</span>
+                </button>
+            </div>
+
+            <!-- PANEL 1: WHITELIST -->
+            <div class="tab-panel active" id="panel-whitelist">
+                <div class="panel-intro">
+                    <h2>Activate Free Bypass</h2>
+                    <p>Enter your player UID to instantly register your 24-hour bypass slot.</p>
+                </div>
+
+                <form id="form-whitelist" autocomplete="off" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="input-uid">PLAYER UID</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-gamepad icon-field"></i>
+                            <input 
+                                type="text" 
+                                id="input-uid" 
+                                placeholder="Enter Free Fire UID (e.g. 192837465)" 
+                                maxlength="22"
+                                required
+                            >
+                            <button type="button" class="paste-trigger" id="btn-paste" title="Paste from clipboard">
+                                <i class="fa-regular fa-clipboard"></i>
+                                <span>Paste</span>
+                            </button>
+                        </div>
+                        <div class="form-feedback">
+                            <span id="field-feedback">Numbers only • Minimum 7 digits</span>
+                            <span class="count-pill" id="digit-count">0 digits</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="cta-button">
+                        <span class="cta-text">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <span>Whitelist Now</span>
+                        </span>
+                        <div class="cta-spinner" id="spinner"></div>
+                    </button>
+                </form>
+
+                <!-- SUCCESS RESULT -->
+                <div id="card-result" class="result-card hidden">
+                    <div class="res-header">
+                        <div class="res-status">
+                            <span class="dot-green"></span>
+                            <span>Whitelisted & Active</span>
+                        </div>
+                        <span class="res-target-uid" id="res-uid">--</span>
+                    </div>
+                    <div class="res-rows">
+                        <div class="res-row">
+                            <span>Access Duration</span>
+                            <strong>24 Hours (1 Day)</strong>
+                        </div>
+                        <div class="res-row">
+                            <span>Expires At</span>
+                            <strong class="text-glow" id="res-expiry">--</strong>
+                        </div>
+                    </div>
+                    <button type="button" class="copy-button" id="btn-copy">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copy UID</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PANEL 2: CHECK STATUS -->
+            <div class="tab-panel" id="panel-status">
+                <div class="panel-intro">
+                    <h2>Inspect Expiration</h2>
+                    <p>Check the remaining time on your active bypass session.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-status-uid">INSPECT UID</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-magnifying-glass icon-field"></i>
+                        <input 
+                            type="text" 
+                            id="input-status-uid" 
+                            placeholder="Enter UID to inspect countdown..." 
+                            maxlength="22"
+                        >
+                        <button type="button" class="btn-inspect" id="btn-check">
+                            <span>Inspect</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- COUNTDOWN RESULT -->
+                <div id="card-status-result" class="result-card hidden">
+                    <div class="res-header">
+                        <div class="res-status" id="pill-status">
+                            <span class="dot-green"></span>
+                            <span>Active on Server</span>
+                        </div>
+                        <span class="res-target-uid" id="status-res-uid">--</span>
+                    </div>
+
+                    <div class="timer-card">
+                        <span class="timer-tag">TIME REMAINING</span>
+                        <div class="timer-countdown" id="timer-val">00h 00m 00s</div>
+                        <div class="timer-bar-wrap">
+                            <div class="timer-bar-fill" id="progress-fill" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="res-rows">
+                        <div class="res-row">
+                            <span>Expiry Timestamp</span>
+                            <strong class="text-glow" id="status-expiry">--</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECURITY NOTICE -->
+            <div class="security-warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Always be aware of 3-4 MB game patches before launching bypass.</span>
+            </div>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="site-footer">
+            <span>✦ JOYST CORPORATION • ALL RIGHTS RESERVED ✦</span>
+        </footer>
+
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
