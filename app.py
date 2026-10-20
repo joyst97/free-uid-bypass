@@ -130,6 +130,13 @@ def api_whitelist():
             }
         }), 409
 
+    # Verify API Key is configured in environment
+    if not config.API_KEY:
+        return jsonify({
+            "success": False,
+            "message": "Gateway API Key is not configured in server environment."
+        }), 500
+
     # Call external API
     headers = {
         'X-API-KEY': config.API_KEY,
@@ -244,35 +251,36 @@ def api_status(uid):
                 }
             })
 
-    # 2. Check remote API if not in local
-    headers = {
-        'X-API-KEY': config.API_KEY,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
-    }
-    try:
-        r = requests.get(
-            f"{config.API_URL}?action=info&account_id={clean_uid}",
-            headers=headers,
-            timeout=8
-        )
-        if r.status_code == 200:
-            res_json = r.json()
-            if res_json.get("success") and "data" in res_json:
-                api_data = res_json["data"]
-                return jsonify({
-                    "success": True,
-                    "data": {
-                        "uid": clean_uid,
-                        "status": "Active",
-                        "added_time": api_data.get("added_on", "N/A"),
-                        "expiry_time": api_data.get("expiry_date", "N/A"),
-                        "remaining_seconds": 86400,
-                        "remaining_formatted": "Active on Server",
-                        "progress_percent": 100
-                    }
-                })
-    except Exception as e:
-        print(f"Info API query error: {e}")
+    # 2. Check remote API if not in local and API_KEY is set
+    if config.API_KEY:
+        headers = {
+            'X-API-KEY': config.API_KEY,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JOYST/1.0'
+        }
+        try:
+            r = requests.get(
+                f"{config.API_URL}?action=info&account_id={clean_uid}",
+                headers=headers,
+                timeout=8
+            )
+            if r.status_code == 200:
+                res_json = r.json()
+                if res_json.get("success") and "data" in res_json:
+                    api_data = res_json["data"]
+                    return jsonify({
+                        "success": True,
+                        "data": {
+                            "uid": clean_uid,
+                            "status": "Active",
+                            "added_time": api_data.get("added_on", "N/A"),
+                            "expiry_time": api_data.get("expiry_date", "N/A"),
+                            "remaining_seconds": 86400,
+                            "remaining_formatted": "Active on Server",
+                            "progress_percent": 100
+                        }
+                    })
+        except Exception as e:
+            print(f"Info API query error: {e}")
 
     return jsonify({
         "success": False,

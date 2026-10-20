@@ -1,23 +1,25 @@
+import os
+
 # ==========================================
 #         JOYST CORPORATION - CONFIG
 # ==========================================
 
-# API Configuration
-API_URL = "https://gtccheats.xyz/Api/uidbypassapi/api_user.php"
-API_KEY = "GTCAPI-6EB8ADC0D6DF8FB56138A01F618846DE"
+# API Configuration (Loaded securely from Environment Variables)
+API_URL = os.getenv("API_URL", "https://gtccheats.xyz/Api/uidbypassapi/api_user.php")
+API_KEY = os.getenv("API_KEY", "")
 
 # Local Storage Database
-UIDS_FILE = "uids.json"
+UIDS_FILE = os.getenv("UIDS_FILE", "uids.json")
 
 # Web Server Settings
 HOST = "0.0.0.0"
-PORT = 5000
-DEBUG = True
+PORT = int(os.getenv("PORT", 5000))
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1")
 
 # Cooldown time in seconds between requests per IP
-COOLDOWN_SECONDS = 3
+COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", 3))
 
 # Branding Assets
-BRAND_NAME   = "JOYST CORPORATION"
-SERVICE_NAME = "Free UID Bypass"
-LOGO_URL     = "https://cdn.discordapp.com/attachments/1410308387412901998/1488471523567079494/logo.png?ex=6a5d42e1&is=6a5bf161&hm=fc85c0f1055710c8ed69665cf7fa9762a501a3c403f890434e161bb4f049a8a9&"
+BRAND_NAME   = os.getenv("BRAND_NAME", "JOYST CORPORATION")
+SERVICE_NAME = os.getenv("SERVICE_NAME", "Free UID Bypass")
+LOGO_URL     = os.getenv("LOGO_URL", "")
